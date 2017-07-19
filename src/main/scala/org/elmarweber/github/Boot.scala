@@ -3,12 +3,14 @@ package org.elmarweber.github
 import akka.actor._
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import kamon.Kamon
 import org.elmarweber.github.httpclient.{HttpClient, KamonHeaderPreProcessor}
 
 object Boot extends App with ServiceRoute with StrictLogging {
   Kamon.addReporter(new MySpanReporter())
+  Kamon.addReporter(new Jaeger())
 
   implicit val system = ActorSystem()
   implicit val ec = system.dispatcher
