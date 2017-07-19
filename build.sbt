@@ -22,7 +22,7 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-http" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
     "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV,
-    "io.kamon"          %% "kamon-core" % "1.0.0-RC1-1d0548cb8281202738d8d48cbe9cdd62cf209e21",
+    "io.kamon"          %% "kamon-core" % "1.0.0-RC1-5ee1b830aff118dc264399ddfb92c1f2b1f51a85",
     "io.kamon"          %% "kamon-scala" % "1.0.0-RC1-933bb552dab8c322a30363f8a56a4e66274367ce",
     "io.kamon"          %% "kamon-executors" % "1.0.0-RC1-5d6a5ebffba5eea7933b2d40808136a878bb15b0",
     "io.kamon"          %% "kamon-akka-2.4" % "1.0.0-RC1-5472bca942c01bb87720263b36978cc0b243365e",
