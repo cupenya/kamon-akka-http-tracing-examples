@@ -84,6 +84,7 @@ trait EchoService {
     }
   }
 
+  // does not work, trace is not collected
   def doExpensiveOperation()(implicit ec: ExecutionContext): Future[Int] = traceFuture("doExpensiveOperation") {
     Future {
       Thread.sleep(500)
@@ -91,6 +92,7 @@ trait EchoService {
     }
   }
 
+  // does work
   def doExpensiveOperationWrapped()(implicit ec: ExecutionContext): Future[Int] = Future {
     val newSpan = Kamon.tracer.buildSpan("doExpensiveOperationWrapped").startActive()
     Thread.sleep(500)
@@ -99,7 +101,7 @@ trait EchoService {
   }
 
   def doEchoSub(msg: Option[String])(implicit ec: ExecutionContext, api: EchoSubServiceApi): Future[EchoResponse] = {
-    doExpensiveOperationWrapped.flatMap { _ =>
+    doExpensiveOperation.flatMap { _ =>
       api.echoSub(msg).map(subMsg => subMsg.copy(echo = subMsg.echo + " (via)"))
     }
   }
