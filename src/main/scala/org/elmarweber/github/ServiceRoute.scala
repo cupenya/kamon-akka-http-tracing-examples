@@ -7,6 +7,8 @@ import akka.http.scaladsl.server.Directives
 import org.elmarweber.github.httpclient.HttpClient
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import kamon.Kamon
+
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -66,15 +68,33 @@ class EchoSubServiceHttpClient(client: HttpClient) extends EchoSubServiceApi {
 
 
 trait EchoService {
+
+  private def traceNewContextFuture0[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+    val parentToken = Tracer.currentContext.token
+    Tracer.withNewContext(s"$category#$name", Some(s"$tokenPrefix-${counter.getAndIncrement()}")) {
+      Tracer.currentContext.addMetadata("parentToken", parentToken)
+      // TODO: check why onComplete takes twice as long
+      f.map(x => {Tracer.currentContext.finish(); x})
+    }
+  }
+
   def doEchoSleepy(msg: Option[String])(implicit ec: ExecutionContext): Future[EchoResponse] = {
     Future {
-      Thread.sleep(500)
       EchoResponse(msg.getOrElse("OK"))
     }
   }
 
+  def doExpensiveOperation()(implicit ec: ExecutionContext): Future[Int] = Future {
+    val newSpan = Kamon.tracer.buildSpan("newSpan").startActive()
+    Thread.sleep(500)
+    newSpan.deactivate()
+    1
+  }
+
   def doEchoSub(msg: Option[String])(implicit ec: ExecutionContext, api: EchoSubServiceApi): Future[EchoResponse] = {
-    api.echoSub(msg).map(subMsg => subMsg.copy(echo = subMsg.echo + " (via)"))
+    doExpensiveOperation.flatMap { _ =>
+      api.echoSub(msg).map(subMsg => subMsg.copy(echo = subMsg.echo + " (via)"))
+    }
   }
 }
 

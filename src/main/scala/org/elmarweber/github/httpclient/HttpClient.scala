@@ -6,15 +6,20 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.settings._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.typesafe.scalalogging.StrictLogging
+import io.opentracing.propagation.Format.Builtin
+import io.opentracing.propagation.TextMap
+import kamon.Kamon
 import org.apache.commons.lang3.StringUtils
 import org.elmarweber.github.httpclient.HttpClient.{HttpScheme, HttpsScheme, Scheme}
 import spray.json._
 
+import scala.collection.mutable
 import scala.concurrent._
 import scala.util._
 
@@ -47,6 +52,26 @@ object RequestResponseLoggingPostProcessor extends SyncHttpClientPostProcessor w
       logger.debug(s"Received response Request ${resp.toString}")
     }
     response
+  }
+}
+
+object KamonHeaderPreProcessor extends SyncHttpClientPreProcessor with StrictLogging {
+  def processSync(request: HttpRequest): HttpRequest =
+    Option(Kamon.activeSpan) match {
+      case Some(activeSpan) =>
+        val headers = mutable.Map.empty[String, String]
+        Kamon.inject(activeSpan.context(), Builtin.HTTP_HEADERS, textMapFromRequest(headers))
+        val injected = headers.foldRight(request)((p, r) => r.addHeader(RawHeader(p._1, p._2)))
+        logger.trace("Injected Request {}", injected)
+        injected
+      case None =>
+        logger.info(s"There is no active span")
+        request
+    }
+
+  private def textMapFromRequest(map: mutable.Map[String, String]): TextMap = new TextMap {
+    override def put(key: String, value: String): Unit = map.put(key, value)
+    override def iterator(): java.util.Iterator[java.util.Map.Entry[String, String]] = throw new RuntimeException("Intentionally not implemented")
   }
 }
 
@@ -148,6 +173,8 @@ class HttpClient(
       }
     }
   }
+
+
 
   def doTypedRestEither[T : JsonFormat](req: HttpRequest): Future[Either[HttpResponse, T]] = {
     doRest(req).flatMap {
