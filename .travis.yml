@@ -3,6 +3,7 @@ script:
   - sbt compile
   - sbt test
   - sbt docker:publishLocal
+  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
   - sbt docker:publish
 scala:
   - 2.11.8
