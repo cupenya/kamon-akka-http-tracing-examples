@@ -2,7 +2,13 @@ name := "akka-http-microservice"
 
 organization := "org.elmarweber.github"
 
-version := "1.0.0"
+maintainer := "Elmar Weber"
+
+
+val shortCommit = ("git rev-parse --short HEAD" !!).replaceAll("\\n", "").replaceAll("\\r", "")
+
+
+version := s"1.0.0-${shortCommit}"
 
 scalaVersion := "2.11.8"
 
@@ -38,4 +44,8 @@ aspectjSettings
 
 javaOptions in reStart <++= AspectjKeys.weaverOptions in Aspectj
 
+
+// docker
+enablePlugins(JavaServerAppPackaging)
+enablePlugins(DockerPlugin)
 

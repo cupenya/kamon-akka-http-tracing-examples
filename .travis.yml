@@ -1,6 +1,13 @@
 language: scala
+script:
+  - sbt compile
+  - sbt test
+  - sbt docker:publishLocal
+  - sbt docker:publish
 scala:
-   - 2.11.8
+  - 2.11.8
 jdk:
-   - oraclejdk8
-sudo: false
+  - oraclejdk8
+sudo: required
+services:
+  - docker
