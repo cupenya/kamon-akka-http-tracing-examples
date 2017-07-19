@@ -72,7 +72,7 @@ class EchoSubServiceHttpClient(client: HttpClient) extends EchoSubServiceApi {
 trait EchoService {
 
   private def traceFuture[T](name: String)(f: => Future[T]): Future[T] = {
-    val newSpan = Kamon.tracer.buildSpan(name).startManual()
+    val newSpan = Kamon.tracer.buildSpan(name).start()
     val activatedSpan = Kamon.makeActive(newSpan)
     val evaluatedFuture = f.transform(
       r => { newSpan.finish(); r},

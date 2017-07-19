@@ -8,13 +8,13 @@ import kamon.util.HexCodec
 
 class MySpanReporter extends SpanReporter with StrictLogging {
 
-  private def duration(span: Span.CompletedSpan): Double = {
+  private def duration(span: Span.FinishedSpan): Double = {
     (span.endTimestampMicros - span.startTimestampMicros).toDouble / 1000 / 1000
   }
 
-  override def reportSpans(spans: Seq[Span.CompletedSpan]): Unit = {
+  override def reportSpans(spans: Seq[Span.FinishedSpan]): Unit = {
      spans.foreach { span =>
-       logger.info(s"${HexCodec.toLowerHex(span.context.traceID)} ${HexCodec.toLowerHex(span.context.spanID)} ${HexCodec.toLowerHex(span.context.parentID)} ${span.operationName} ${duration(span)} ${span.tags}")
+       logger.info(s"${(span.context.traceID.string)} ${(span.context.spanID.string)} ${(span.context.parentID.string)} ${span.operationName} ${duration(span)} ${span.tags}")
      }
   }
 

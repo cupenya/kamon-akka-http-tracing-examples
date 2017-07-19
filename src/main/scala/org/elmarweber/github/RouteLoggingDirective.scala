@@ -1,25 +1,16 @@
 package org.elmarweber.github
 
-import java.io.StringWriter
-import java.util
-import java.util.Map
 import java.util.concurrent.atomic.AtomicLong
 
-import akka.http.scaladsl.server.directives.BasicDirectives
-import akka.actor._
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.server._
-import akka.http.scaladsl.server.directives.BasicDirectives.{extractRequestContext, mapRouteResult}
-import io.opentracing.propagation.Format.Builtin.HTTP_HEADERS
-import io.opentracing.propagation.TextMap
+import akka.http.scaladsl.server.directives.BasicDirectives
 import kamon.Kamon
-import kamon.trace.Tracer
-import scala.collection.JavaConverters._
+import kamon.trace.TextMap
 
 import scala.util.Random
 
 trait RouteLoggingDirective extends BasicDirectives {
-  import RouteLoggingDirective._
   
   private val randomSeed = Random.nextInt(100000)
 
@@ -30,12 +21,18 @@ trait RouteLoggingDirective extends BasicDirectives {
     extractRequestContext.flatMap { ctx ⇒
       val traceId = s"req-$randomSeed-${requestIdCounter.getAndIncrement()}-${additionalTraceId}"
       val textMap = readOnlyTextMapFromHeaders(ctx.request.headers)
-      val incomingSpanContext = Kamon.extract(HTTP_HEADERS, textMap)
-      val span = Kamon.buildSpan(ctx.request.uri.path.toString).asChildOf(incomingSpanContext).withTag("myTraceId", traceId).startManual()
+      val incomingSpanContext = Kamon.extract(kamon.trace.SpanContextCodec.Format.TextMap, textMap)
+      val span = {
+        val builder = Kamon.buildSpan(ctx.request.uri.path.toString)
+        incomingSpanContext.foreach(builder.asChildOf)
+        builder.withSpanTag("myTraceId", traceId)
+        builder.start()
+      }
       val activeSpan = Kamon.makeActive(span)
 
       mapRouteResult { result ⇒
         span.finish()
+        activeSpan.deactivate()
         //val responseWithTraceHeader = response.copy(headers = RawHeader(KamonTraceRest.PublicHeaderName, traceId) :: response.headers)
         println(traceId + " done")
         result
@@ -43,14 +40,12 @@ trait RouteLoggingDirective extends BasicDirectives {
     }
 
   def readOnlyTextMapFromHeaders(headers: Seq[HttpHeader]): TextMap = new TextMap {
-    override def put(key: String, value: String): Unit = {}
+    private val headersMap = headers.map { h => h.name -> h.value }.toMap
+    override def get(key: String): Option[String] = headersMap.get(key)
 
-    override def iterator(): util.Iterator[Map.Entry[String, String]] =
-      headers.map(h => new Map.Entry[String, String] {
-        override def getKey: String = h.name()
-        override def getValue: String = h.value()
-        override def setValue(value: String): String = value
-      }).iterator.asJava
+    override def put(key: String, value: String): Unit = ???
+
+    override def values: Iterator[(String, String)] = headersMap.iterator
   }
 }
 

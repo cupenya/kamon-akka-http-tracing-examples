@@ -6,6 +6,7 @@ import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 import kamon.Kamon
+import kamon.jaeger.Jaeger
 import org.elmarweber.github.httpclient.{HttpClient, KamonHeaderPreProcessor}
 
 object Boot extends App with ServiceRoute with StrictLogging {
