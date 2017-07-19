@@ -13,6 +13,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl._
 import com.typesafe.scalalogging.StrictLogging
 import kamon.Kamon
+import kamon.trace.SpanContextCodec.Format
 import kamon.trace.TextMap
 import org.apache.commons.lang3.StringUtils
 import org.elmarweber.github.httpclient.HttpClient.{HttpScheme, HttpsScheme, Scheme}
@@ -124,8 +125,15 @@ class HttpClient(
     case HttpsScheme => Http(system).cachedHostConnectionPoolHttps[HttpRequest](host, port, settings = settings.getOrElse(ConnectionPoolSettings(system)))
   }
 
+  private def injectRequest(request: HttpRequest): HttpRequest = {
+    val parentContext = Kamon.activeSpan().context()
+    val headersToAppend = Kamon.inject(parentContext, Format.HttpHeaders)
+    headersToAppend.values.foldRight(request)((p, r) => r.addHeader(RawHeader(p._1, p._2)))
+  }
 
-  def doRest(req: HttpRequest): Future[HttpResponse] = {
+
+  def doRest(request: HttpRequest): Future[HttpResponse] = {
+    val req = injectRequest(request)
     val fixedUri = cleanPrefix match {
       case None => req.uri
       case Some(prefix) => req.uri.withPath(Path(prefix) ++ req.uri.path)
@@ -140,6 +148,7 @@ class HttpClient(
     val postProcessed = postProcs.foldLeft(poolFlow) { case (stage, proc) =>
       stage.mapAsync(parallelism = 1) { case (resp, req) => proc.process(req, resp).map(r => r -> req) }
     }
+
     postProcessed.runWith(Sink.head).flatMap {
       case (Success(response), _) => Future.successful(response)
       case (Failure(ex), _) => Future.failed(ex)

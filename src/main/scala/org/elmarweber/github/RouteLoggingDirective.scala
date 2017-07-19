@@ -6,7 +6,9 @@ import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.BasicDirectives
 import kamon.Kamon
+import kamon.trace.SpanContextCodec.Format
 import kamon.trace.TextMap
+import kamon.util.CallingThreadExecutionContext
 
 import scala.util.Random
 
@@ -17,27 +19,25 @@ trait RouteLoggingDirective extends BasicDirectives {
   private val requestIdCounter = new AtomicLong(1)
   protected def additionalTraceId = "trace"
 
-  def trace: Directive0 =
-    extractRequestContext.flatMap { ctx ⇒
+  def trace: Directive[Unit] = _trace
+
+  private val _trace = Directive[Unit] {
+    innerRoute ⇒ ctx ⇒ {
       val traceId = s"req-$randomSeed-${requestIdCounter.getAndIncrement()}-${additionalTraceId}"
       val textMap = readOnlyTextMapFromHeaders(ctx.request.headers)
-      val incomingSpanContext = Kamon.extract(kamon.trace.SpanContextCodec.Format.TextMap, textMap)
-      val span = {
-        val builder = Kamon.buildSpan(ctx.request.uri.path.toString)
-        incomingSpanContext.foreach(builder.asChildOf)
-        builder.withSpanTag("myTraceId", traceId)
-        builder.start()
-      }
-      val activeSpan = Kamon.makeActive(span)
+      val incomingSpanContext = Kamon.extract(Format.HttpHeaders, textMap)
+      val serverSpan = Kamon.buildSpan(ctx.request.uri.path.toString)
+        .asChildOf(incomingSpanContext)
+        .withSpanTag("myTraceId", traceId)
+        .startActive()
 
-      mapRouteResult { result ⇒
-        span.finish()
-        activeSpan.deactivate()
-        //val responseWithTraceHeader = response.copy(headers = RawHeader(KamonTraceRest.PublicHeaderName, traceId) :: response.headers)
-        println(traceId + " done")
-        result
-      }
+      val innerRouteResult = innerRoute(ctx)(ctx)
+      innerRouteResult.onComplete(_ => serverSpan.finish())(CallingThreadExecutionContext)
+      serverSpan.deactivate()
+
+      innerRouteResult
     }
+  }
 
   def readOnlyTextMapFromHeaders(headers: Seq[HttpHeader]): TextMap = new TextMap {
     private val headersMap = headers.map { h => h.name -> h.value }.toMap
