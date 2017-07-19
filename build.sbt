@@ -49,3 +49,5 @@ javaOptions in reStart <++= AspectjKeys.weaverOptions in Aspectj
 enablePlugins(JavaServerAppPackaging)
 enablePlugins(DockerPlugin)
 
+packageName in Docker := "cupenya/" + name.value
+dockerBaseImage := "airdock/oracle-jdk:jdk-1.8"
