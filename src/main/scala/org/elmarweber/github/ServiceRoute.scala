@@ -14,8 +14,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ServiceRoute extends Directives with RouteLoggingDirective {
   implicit def ec: ExecutionContext
+
   implicit def api: EchoSubServiceApi
-  
+
   val serviceRoute = pathPrefix("api") {
     trace {
       pathPrefix("echo") {
@@ -29,28 +30,28 @@ trait ServiceRoute extends Directives with RouteLoggingDirective {
           }
         }
       } ~
-      pathPrefix("echo-via-sub") {
-        pathEndOrSingleSlash {
-          get {
-            parameter("msg".as[String].?) { msg =>
-              complete {
-                EchoService.doEchoSub(msg)
+          pathPrefix("echo-via-sub") {
+            pathEndOrSingleSlash {
+              get {
+                parameter("msg".as[String].?) { msg =>
+                  complete {
+                    EchoService.doEchoSub(msg)
+                  }
+                }
+              }
+            }
+          } ~
+          pathPrefix("echo-sub") {
+            pathEndOrSingleSlash {
+              get {
+                parameter("msg".as[String].?) { msg =>
+                  complete {
+                    EchoResponse("sub: " + msg.getOrElse("OK"))
+                  }
+                }
               }
             }
           }
-        }
-      } ~
-      pathPrefix("echo-sub") {
-        pathEndOrSingleSlash {
-          get {
-            parameter("msg".as[String].?) { msg =>
-              complete {
-                EchoResponse("sub: " + msg.getOrElse("OK"))
-              }
-            }
-          }
-        }
-      }
     }
   }
 }
@@ -69,13 +70,12 @@ class EchoSubServiceHttpClient(client: HttpClient) extends EchoSubServiceApi {
 
 trait EchoService {
 
-  private def traceNewContextFuture0[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
-    val parentToken = Tracer.currentContext.token
-    Tracer.withNewContext(s"$category#$name", Some(s"$tokenPrefix-${counter.getAndIncrement()}")) {
-      Tracer.currentContext.addMetadata("parentToken", parentToken)
-      // TODO: check why onComplete takes twice as long
-      f.map(x => {Tracer.currentContext.finish(); x})
-    }
+  private def traceFuture[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
+    val newSpan = Kamon.tracer.buildSpan("newSpan").startActive()
+    f.transform(
+      r => {newSpan.deactivate(); r},
+      t => {newSpan.deactivate(); t}
+    )
   }
 
   def doEchoSleepy(msg: Option[String])(implicit ec: ExecutionContext): Future[EchoResponse] = {
@@ -84,15 +84,22 @@ trait EchoService {
     }
   }
 
-  def doExpensiveOperation()(implicit ec: ExecutionContext): Future[Int] = Future {
-    val newSpan = Kamon.tracer.buildSpan("newSpan").startActive()
+  def doExpensiveOperation()(implicit ec: ExecutionContext): Future[Int] = traceFuture("doExpensiveOperation") {
+    Future {
+      Thread.sleep(500)
+      1
+    }
+  }
+
+  def doExpensiveOperationWrapped()(implicit ec: ExecutionContext): Future[Int] = Future {
+    val newSpan = Kamon.tracer.buildSpan("doExpensiveOperationWrapped").startActive()
     Thread.sleep(500)
     newSpan.deactivate()
     1
   }
 
   def doEchoSub(msg: Option[String])(implicit ec: ExecutionContext, api: EchoSubServiceApi): Future[EchoResponse] = {
-    doExpensiveOperation.flatMap { _ =>
+    doExpensiveOperationWrapped.flatMap { _ =>
       api.echoSub(msg).map(subMsg => subMsg.copy(echo = subMsg.echo + " (via)"))
     }
   }
