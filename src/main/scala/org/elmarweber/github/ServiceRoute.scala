@@ -8,6 +8,7 @@ import org.elmarweber.github.httpclient.HttpClient
 import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import kamon.Kamon
+import kamon.util.CallingThreadExecutionContext
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -70,12 +71,15 @@ class EchoSubServiceHttpClient(client: HttpClient) extends EchoSubServiceApi {
 
 trait EchoService {
 
-  private def traceFuture[T](name: String)(f: => Future[T])(implicit ec: ExecutionContext): Future[T] = {
-    val newSpan = Kamon.tracer.buildSpan("newSpan").startActive()
-    f.transform(
-      r => {newSpan.deactivate(); r},
-      t => {newSpan.deactivate(); t}
-    )
+  private def traceFuture[T](name: String)(f: => Future[T]): Future[T] = {
+    val newSpan = Kamon.tracer.buildSpan(name).startManual()
+    val activatedSpan = Kamon.makeActive(newSpan)
+    val evaluatedFuture = f.transform(
+      r => { newSpan.finish(); r},
+      t => { newSpan.finish(); t}
+    )(CallingThreadExecutionContext)
+    activatedSpan.deactivate()
+    evaluatedFuture
   }
 
   def doEchoSleepy(msg: Option[String])(implicit ec: ExecutionContext): Future[EchoResponse] = {
@@ -92,13 +96,6 @@ trait EchoService {
     }
   }
 
-  // does work
-  def doExpensiveOperationWrapped()(implicit ec: ExecutionContext): Future[Int] = Future {
-    val newSpan = Kamon.tracer.buildSpan("doExpensiveOperationWrapped").startActive()
-    Thread.sleep(500)
-    newSpan.deactivate()
-    1
-  }
 
   def doEchoSub(msg: Option[String])(implicit ec: ExecutionContext, api: EchoSubServiceApi): Future[EchoResponse] = {
     doExpensiveOperation.flatMap { _ =>
