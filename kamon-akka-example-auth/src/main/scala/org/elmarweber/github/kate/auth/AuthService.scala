@@ -10,6 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait AuthService extends InstrumentationSupport with StrictLogging {
   def doAuth(apiKey: String)(implicit ec: ExecutionContext): Future[String] = traceFuture("doAuth") {
     Future {
+      logger.debug(s"Trying to authenticate ${apiKey}")
       Kamon.tracer.activeSpan().addSpanTag("apiKey", apiKey)
       if (apiKey == "") {
         Kamon.tracer.activeSpan().annotate("error", Map("message" -> "Empty API Key provided"))

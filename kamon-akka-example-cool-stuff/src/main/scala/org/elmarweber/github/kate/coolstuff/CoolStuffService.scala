@@ -10,6 +10,7 @@ trait CoolStuffService extends InstrumentationSupport with StrictLogging {
   def profileApi: ProfileApi
 
   def doCoolStuff()(implicit ec: ExecutionContext, auth: AuthResponse): Future[CoolStuffResponse] = traceFuture("doCoolStuff") {
+    logger.debug("Doing really cool stuff ")
     for {
       profile <- profileApi.get(auth.userId)
     } yield {
