@@ -15,7 +15,7 @@ object AuthModel extends DefaultJsonProtocol {
 }
 
 case class AuthRequest(apiKey: String) extends AuthModel
-case class AuthResponse(apiKey: String, verifiedToken: String) extends AuthModel
+case class AuthResponse(apiKey: String, userId: String) extends AuthModel
 
 
 trait AuthApi {

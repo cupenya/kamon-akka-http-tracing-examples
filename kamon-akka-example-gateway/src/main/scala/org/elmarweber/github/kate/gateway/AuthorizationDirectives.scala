@@ -1,6 +1,5 @@
-package org.elmarweber.github
+package org.elmarweber.github.kate.gateway
 
-import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken, RawHeader}
 import akka.http.scaladsl.server.{AuthorizationFailedRejection, Directive1, Directives}
 import com.typesafe.scalalogging.StrictLogging
 import kamon.Kamon

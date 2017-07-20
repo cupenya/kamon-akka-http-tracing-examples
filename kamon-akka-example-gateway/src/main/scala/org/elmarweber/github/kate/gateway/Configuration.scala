@@ -1,4 +1,4 @@
-package org.elmarweber.github
+package org.elmarweber.github.kate.gateway
 
 import akka.http.scaladsl.model.Uri
 import com.typesafe.config.ConfigFactory
@@ -14,8 +14,8 @@ object Configuration {
       val port = config.getInt("port")
     }
 
-    object client {
-      private val config = rootConfig.getConfig("service.client")
+    object coolStuff {
+      private val config = rootConfig.getConfig("service.cool-stuff")
 
       val endpoint = Uri(config.getString("endpoint"))
     }
