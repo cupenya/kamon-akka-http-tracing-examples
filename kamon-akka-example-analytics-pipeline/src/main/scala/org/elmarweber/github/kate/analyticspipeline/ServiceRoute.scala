@@ -7,11 +7,12 @@ import com.typesafe.scalalogging.StrictLogging
 import kamon.Kamon
 import org.elmarweber.github.kate.lib.api.{AnalyticsEvent, AuthRequest, AuthResponse}
 import org.elmarweber.github.kate.lib.kamon.RouteLoggingDirective
+import spray.json._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 
-trait ServiceRoute extends Directives with RouteLoggingDirective with StrictLogging{
+trait ServiceRoute extends Directives with RouteLoggingDirective with StrictLogging with DefaultJsonProtocol {
   implicit def ec: ExecutionContext
 
 
@@ -26,7 +27,7 @@ trait ServiceRoute extends Directives with RouteLoggingDirective with StrictLogg
               complete {
                 logger.info(s"Queued event ${event}")
                 streamSourceActor ! (event, Kamon.tracer.activeSpan().context)
-                "OK"
+                Future.successful(JsNumber(1))
               }
             }
           }

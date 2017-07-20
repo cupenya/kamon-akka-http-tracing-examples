@@ -14,13 +14,16 @@ object Configuration {
       val port = config.getInt("port")
     }
 
-
     object profile {
       private val config = rootConfig.getConfig("service.profile")
 
       val endpoint = Uri(config.getString("endpoint"))
     }
+
+    object analyticsPipeline {
+      private val config = rootConfig.getConfig("service.analytics-pipeline")
+
+      val endpoint = Uri(config.getString("endpoint"))
+    }
   }
-
-
 }
