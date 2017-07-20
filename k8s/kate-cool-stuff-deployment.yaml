@@ -21,7 +21,7 @@ spec:
         - name: cpy-docker-test-registry
       containers:
       - name: kate-cool-stuff
-        image: elmarweber/kamon-akka-http-tracing-kate-cool-stuff:1.0.0-b5efbaa
+        image: elmarweber/kamon-akka-example-cool-stuff:1.0.0-b5efbaa
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
@@ -29,7 +29,7 @@ spec:
         args: [
           "-Djava.security.egd=file:/dev/./urandom",
           "-Xmx1g",
-          "-Dservice.interface.port=9090",
+          "-Dservice.http.port=9090",
           "-Dservice.profile.endpoint=http://kate-profile-service",
           "-Dkamon.jaeger.host=jaeger-agent.jaeger.svc.cluster.local",
         ]
