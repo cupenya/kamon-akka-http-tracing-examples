@@ -1,19 +1,11 @@
 package org.elmarweber.github.kate.auth
 
-import akka.http.scaladsl.client.RequestBuilding
-import akka.http.scaladsl.model.Uri.Query
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives
-import kamon.Kamon
-import kamon.util.CallingThreadExecutionContext
-import org.apache.commons.codec.digest.DigestUtils
-import org.elmarweber.github.kate.lib.api.{AuthRequest, AuthResponse}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import com.typesafe.scalalogging.StrictLogging
-import kamon.trace.Span
-import org.elmarweber.github.kate.lib.kamon.{InstrumentationSupport, RouteLoggingDirective}
+import akka.http.scaladsl.server.Directives
+import org.elmarweber.github.kate.lib.api.{AuthRequest, AuthResponse}
+import org.elmarweber.github.kate.lib.kamon.RouteLoggingDirective
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 
 trait ServiceRoute extends Directives with RouteLoggingDirective {
@@ -38,22 +30,5 @@ trait ServiceRoute extends Directives with RouteLoggingDirective {
   }
 }
 
-trait AuthService extends InstrumentationSupport with StrictLogging {
-  def doAuth(apiKey: String)(implicit ec: ExecutionContext): Future[String] = traceFuture("doAuth") {
-    Future {
-      Kamon.tracer.activeSpan().addSpanTag("apiKey", apiKey)
-      if (apiKey == "") {
-        Kamon.tracer.activeSpan().annotate("error", Map("message" -> "Empty API Key provided"))
-        logger.error(s"Empty API Key provided")
-        throw new Error("Empty API Key provided")
-      } else {
-        Thread.sleep(50)
-        logger.info(s"Successfully authenticated ${apiKey}")
-        DigestUtils.sha256Hex(apiKey + "secret")
-      }
 
-    }
-  }
-}
 
-object AuthService extends AuthService
