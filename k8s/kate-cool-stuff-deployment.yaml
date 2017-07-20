@@ -21,7 +21,7 @@ spec:
         - name: cpy-docker-test-registry
       containers:
       - name: kate-cool-stuff
-        image: elmarweber/kamon-akka-http-tracing-kate-cool-stuff:1.0.0-e4ec545
+        image: elmarweber/kamon-akka-http-tracing-kate-cool-stuff:1.0.0-b5efbaa
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
