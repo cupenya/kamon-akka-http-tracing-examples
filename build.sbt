@@ -6,8 +6,7 @@ lazy val root = (project in file("."))
   .settings(Seq(name := "kamon-akka-http-tracing-examples"))
   .settings(serviceSettings)
   .settings(commonSettings)
-  .enablePlugins(JavaServerAppPackaging)
-  .enablePlugins(DockerPlugin)
+  .enablePlugins(JavaServerAppPackaging, DockerPlugin, JavaAgent)
 
 val shortCommit = ("git rev-parse --short HEAD" !!).replaceAll("\\n", "").replaceAll("\\r", "")
 
@@ -22,7 +21,7 @@ lazy val serviceSettings = Seq(
   javaOptions in reStart <++= AspectjKeys.weaverOptions in Aspectj,
   packageName in Docker := "elmarweber/" + name.value,
   dockerBaseImage := "airdock/oracle-jdk:jdk-1.8",
-  NativePackagerKeys.bashScriptExtraDefines += """addJava "-javaagent:${app_home}/../lib/org.aspectj.aspectjweaver-1.8.7.jar""""
+  javaAgents += "org.aspectj" % "aspectjweaver" % "1.8.10"
 ) ++ aspectjSettings
 
 

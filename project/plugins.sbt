@@ -6,3 +6,5 @@ libraryDependencies += "org.vafer" % "jdeb" % "1.3" artifacts (Artifact("jdeb", 
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.8.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-aspectj" % "0.10.6")
+
+addSbtPlugin("com.lightbend.sbt" % "sbt-javaagent" % "0.1.3")
