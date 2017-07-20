@@ -4,13 +4,16 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Stash}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import com.typesafe.scalalogging.StrictLogging
+import kamon.Kamon
+import kamon.trace.SpanContext
 import org.elmarweber.github.kate.analyticspipeline.AnalyticsStreamActor.StreamInitActorRef
 import org.elmarweber.github.kate.lib.api.AnalyticsEvent
+import org.elmarweber.github.kate.lib.kamon.InstrumentationSupport
 
 import scala.concurrent.Future
 import scala.util.{Failure, Random, Success}
 
-class AnalyticsStreamActor extends Actor with StrictLogging with Stash {
+class AnalyticsStreamActor extends Actor with StrictLogging with Stash with InstrumentationSupport {
   private implicit val sys = ActorSystem("analytics-stream-system")
   private implicit val ec = sys.dispatcher
   private implicit val materializer = ActorMaterializer()
@@ -18,19 +21,23 @@ class AnalyticsStreamActor extends Actor with StrictLogging with Stash {
   private var streamSourceActorRef: Option[ActorRef] = None
 
   override def preStart(): Unit = {
-    val stream = Source.actorRef[AnalyticsEvent](4096, overflowStrategy = OverflowStrategy.dropBuffer)
+    val stream = Source.actorRef[(AnalyticsEvent, SpanContext)](4096, overflowStrategy = OverflowStrategy.dropBuffer)
       .mapMaterializedValue { actorRef =>
         self ! StreamInitActorRef(actorRef)
         actorRef
       }
-      .mapAsyncUnordered(4) { event =>
-        Future {
-          Thread.sleep(1000)
-          (event, Random.nextInt(100000))
+      .mapAsyncUnordered(4) { case (event, parentSpan) =>
+        traceFuture("AnalyticsStream.lookupUsers") {
+          Future {
+            Thread.sleep(1000)
+            ((event, Random.nextInt(100000)), parentSpan)
+          }
         }
-      }.map { case (event, users) =>
-         logger.info(s"Processed ${event.userId} ${users}")
-         Thread.sleep(100)
+      }.map { case ((event, users), parentSpan) =>
+        traceBlock("AnalyticsStream.process", Some(parentSpan)) {
+          logger.info(s"Processed ${event.userId} ${users}")
+          Thread.sleep(100)
+        }
       }
       .runWith(Sink.ignore)
     stream.onComplete {
@@ -53,8 +60,11 @@ class AnalyticsStreamActor extends Actor with StrictLogging with Stash {
   }
 
   def receiveReady: Receive = {
-    case e: AnalyticsEvent =>
-      streamSourceActorRef.getOrElse(throw new IllegalStateException("Error during init, no actor ref")) ! e
+    case (e: AnalyticsEvent, parentSpan: SpanContext) =>
+      traceBlock("receiveAnalyticsEvent", Some(parentSpan)) {
+        logger.debug(s"Feeding event ${e} to stream")
+        streamSourceActorRef.getOrElse(throw new IllegalStateException("Error during init, no actor ref")) ! (e, parentSpan)
+      }
   }
 
 

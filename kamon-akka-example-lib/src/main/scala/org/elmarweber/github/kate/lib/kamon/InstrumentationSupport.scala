@@ -2,6 +2,7 @@ package org.elmarweber.github.kate.lib.kamon
 
 import com.typesafe.scalalogging.StrictLogging
 import kamon.Kamon
+import kamon.trace.{Span, SpanContext}
 import kamon.util.CallingThreadExecutionContext
 
 import scala.concurrent.Future
@@ -21,6 +22,17 @@ trait InstrumentationSupport extends StrictLogging {
     )(CallingThreadExecutionContext)
     activatedSpan.deactivate()
     evaluatedFuture
+  }
+
+  def traceBlock[T](name: String, parentSpanContext: Option[SpanContext] = None)(f: => T): T = {
+    val newSpan = Kamon.tracer.buildSpan(name).asChildOf(parentSpanContext).start()
+    val activatedSpan = Kamon.makeActive(newSpan)
+    try {
+      f
+    } finally {
+      activatedSpan.deactivate()
+      newSpan.finish()
+    }
   }
 }
 
