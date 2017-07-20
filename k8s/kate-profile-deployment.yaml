@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: akka-test-deployment
+  name: kate-profile-deployment
   labels:
     gitRev: "b5b13fa"
 spec:
@@ -13,15 +13,15 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      name: akka-test
+      name: kate-profile
       labels:
-        app: akka-test
+        app: kate-profile
     spec:
       imagePullSecrets:
         - name: cpy-docker-test-registry
       containers:
-      - name: akka-test
-        image: elmarweber/kamon-akka-http-tracing-examples:1.0.0-e4ec545
+      - name: kate-profile
+        image: elmarweber/kamon-akka-http-tracing-kate-profile:1.0.0-e4ec545
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
@@ -29,5 +29,6 @@ spec:
         args: [
           "-Djava.security.egd=file:/dev/./urandom",
           "-Xmx1g",
+          "-Dservice.interface.port=9090",
           "-Dkamon.jaeger.host=jaeger-agent.jaeger.svc.cluster.local",
         ]
