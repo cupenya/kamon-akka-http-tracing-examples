@@ -3,6 +3,8 @@ package org.elmarweber.github.kate.lib.kamon
 import java.util.concurrent.atomic.AtomicLong
 
 import akka.http.scaladsl.model.HttpHeader
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.server.RouteResult.Complete
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.BasicDirectives
 import kamon.Kamon
@@ -12,7 +14,7 @@ import kamon.util.CallingThreadExecutionContext
 
 import scala.util.Random
 
-trait RouteLoggingDirective extends BasicDirectives {
+trait RouteLoggingDirective extends BasicDirectives with InstrumentationSupport {
   
   private val randomSeed = Random.nextInt(100000)
 
@@ -26,7 +28,7 @@ trait RouteLoggingDirective extends BasicDirectives {
       val traceId = s"req-$randomSeed-${requestIdCounter.getAndIncrement()}-${additionalTraceId}"
       val textMap = readOnlyTextMapFromHeaders(ctx.request.headers)
       val incomingSpanContext = Kamon.extract(Format.HttpHeaders, textMap)
-      val serverSpan = Kamon.buildSpan(ctx.request.uri.path.toString)
+      val serverSpan = addDefaultTags(Kamon.buildSpan(ctx.request.uri.path.toString))
         .asChildOf(incomingSpanContext)
         .withSpanTag("myTraceId", traceId)
         .startActive()
@@ -35,7 +37,12 @@ trait RouteLoggingDirective extends BasicDirectives {
       innerRouteResult.onComplete(_ => serverSpan.finish())(CallingThreadExecutionContext)
       serverSpan.deactivate()
 
-      innerRouteResult
+      innerRouteResult.map {
+        case Complete(res) =>
+          Complete(res
+              .addHeader(RawHeader("x-trace-token", serverSpan.context().traceID.string)))
+        case o => o
+      }(CallingThreadExecutionContext)
     }
   }
 
