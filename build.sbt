@@ -2,14 +2,14 @@ lazy val lib = (project in file("./kamon-akka-example-lib"))
   .settings(commonSettings)
 
 lazy val root = (project in file("."))
-  .aggregate(lib).dependsOn(lib)
+  .dependsOn(lib)
   .settings(Seq(name := "kamon-akka-http-tracing-examples"))
   .settings(serviceSettings)
   .settings(commonSettings)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(DockerPlugin)
 
-val shortCommit = "" // ("git rev-parse --short HEAD" !!).replaceAll("\\n", "").replaceAll("\\r", "")
+val shortCommit = ("git rev-parse --short HEAD" !!).replaceAll("\\n", "").replaceAll("\\r", "")
 
 lazy val commonSettings = Seq(
   version := s"1.0.0-${shortCommit}",
