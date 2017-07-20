@@ -1,6 +1,5 @@
-package org.elmarweber.github.kate.auth
+package org.elmarweber.github.kate.profile
 
-import akka.http.scaladsl.model.Uri
 import com.typesafe.config.ConfigFactory
 
 object Configuration {
@@ -13,14 +12,6 @@ object Configuration {
       val interface = config.getString("interface")
       val port = config.getInt("port")
     }
-
-
-    object profile {
-      private val config = rootConfig.getConfig("service.profile")
-
-      val endpoint = Uri(config.getString("endpoint"))
-    }
   }
-
 
 }

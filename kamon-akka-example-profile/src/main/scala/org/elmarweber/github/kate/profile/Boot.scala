@@ -1,4 +1,4 @@
-package org.elmarweber.github.kate.auth
+package org.elmarweber.github.kate.profile
 
 import akka.actor._
 import akka.http.scaladsl.Http

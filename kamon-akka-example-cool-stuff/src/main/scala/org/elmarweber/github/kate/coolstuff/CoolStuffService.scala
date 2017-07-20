@@ -1,4 +1,4 @@
-package org.elmarweber.github.kate.auth
+package org.elmarweber.github.kate.coolstuff
 
 import com.typesafe.scalalogging.StrictLogging
 import org.elmarweber.github.kate.lib.api.{AuthResponse, CoolStuffResponse, ProfileApi}
