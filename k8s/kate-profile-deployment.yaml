@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: kate-profile-deployment
   labels:
-    gitRev: "b5b13fa"
+    gitRev: "af01608"
 spec:
   replicas: 1
   strategy:
@@ -21,11 +21,23 @@ spec:
         - name: cpy-docker-test-registry
       containers:
       - name: kate-profile
-        image: elmarweber/kamon-akka-example-profile:1.0.0-b5efbaa
+        image: elmarweber/kamon-akka-example-profile:1.0.0-af01608
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
         env:
+        - name: KUBERNETES_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: KUBERNETES_POD
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         args: [
           "-Djava.security.egd=file:/dev/./urandom",
           "-Xmx1g",
