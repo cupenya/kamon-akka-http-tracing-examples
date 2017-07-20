@@ -1,14 +1,14 @@
 package org.elmarweber.github
 
 import akka.http.scaladsl.client.RequestBuilding
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives
-import org.elmarweber.github.httpclient.HttpClient
-import spray.json._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import kamon.Kamon
 import kamon.util.CallingThreadExecutionContext
+import org.elmarweber.github.kate.lib.httpclient.HttpClient
+import org.elmarweber.github.kate.lib.kamon.RouteLoggingDirective
 
 import scala.concurrent.{ExecutionContext, Future}
 

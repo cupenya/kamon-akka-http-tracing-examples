@@ -1,12 +1,11 @@
-package org.elmarweber.github
+package org.elmarweber.github.kate.lib.kamon
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.StrictLogging
 import kamon.SpanReporter
 import kamon.trace.Span
-import kamon.util.HexCodec
 
-class MySpanReporter extends SpanReporter with StrictLogging {
+class LogSpanReporter extends SpanReporter with StrictLogging {
 
   private def duration(span: Span.FinishedSpan): Double = {
     (span.endTimestampMicros - span.startTimestampMicros).toDouble / 1000 / 1000

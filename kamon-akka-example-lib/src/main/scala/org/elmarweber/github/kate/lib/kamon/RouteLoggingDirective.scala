@@ -1,4 +1,4 @@
-package org.elmarweber.github
+package org.elmarweber.github.kate.lib.kamon
 
 import java.util.concurrent.atomic.AtomicLong
 

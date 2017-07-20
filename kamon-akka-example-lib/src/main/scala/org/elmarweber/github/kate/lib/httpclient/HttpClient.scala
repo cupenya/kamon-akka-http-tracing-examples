@@ -1,4 +1,4 @@
-package org.elmarweber.github.httpclient
+package org.elmarweber.github.kate.lib.httpclient
 
 import java.util.concurrent.atomic.AtomicLong
 
@@ -16,7 +16,7 @@ import kamon.Kamon
 import kamon.trace.SpanContextCodec.Format
 import kamon.trace.TextMap
 import org.apache.commons.lang3.StringUtils
-import org.elmarweber.github.httpclient.HttpClient.{HttpScheme, HttpsScheme, Scheme}
+import org.elmarweber.github.kate.lib.httpclient.HttpClient._
 import spray.json._
 
 import scala.collection.mutable

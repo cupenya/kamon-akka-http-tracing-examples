@@ -1,8 +1,15 @@
 lazy val lib = (project in file("./kamon-akka-example-lib"))
   .settings(commonSettings)
 
+lazy val auth = (project in file("./kamon-akka-example-auth"))
+  .dependsOn(lib)
+  .settings(commonSettings)
+  .settings(serviceSettings)
+  .enablePlugins(JavaServerAppPackaging, DockerPlugin, JavaAgent)
+
 lazy val root = (project in file("."))
   .dependsOn(lib)
+  .aggregate(auth)
   .settings(Seq(name := "kamon-akka-http-tracing-examples"))
   .settings(serviceSettings)
   .settings(commonSettings)
