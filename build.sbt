@@ -21,7 +21,8 @@ lazy val commonSettings = Seq(
 lazy val serviceSettings = Seq(
   javaOptions in reStart <++= AspectjKeys.weaverOptions in Aspectj,
   packageName in Docker := "elmarweber/" + name.value,
-  dockerBaseImage := "airdock/oracle-jdk:jdk-1.8"
+  dockerBaseImage := "airdock/oracle-jdk:jdk-1.8",
+  NativePackagerKeys.bashScriptExtraDefines += """addJava "-javaagent:${app_home}/../lib/org.aspectj.aspectjweaver-1.8.7.jar""""
 ) ++ aspectjSettings
 
 
