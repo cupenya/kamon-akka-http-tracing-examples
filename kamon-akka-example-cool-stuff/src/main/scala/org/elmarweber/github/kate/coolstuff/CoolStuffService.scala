@@ -11,13 +11,15 @@ trait CoolStuffService extends InstrumentationSupport with StrictLogging {
   def analyticsPipelineApi: AnalyticsPipelineApi
 
   def doCoolStuff()(implicit ec: ExecutionContext, auth: AuthResponse): Future[CoolStuffResponse] = traceFuture("doCoolStuff") {
-    logger.debug("Doing really cool stuff ")
+    logger.debug("Doing really cool stuff")
     for {
       profile <- profileApi.get(auth.userId)
-      event = AnalyticsEvent(auth.userId, profile.country, "cool-event")
+      event = traceBlock("createEvent")(AnalyticsEvent(auth.userId, profile.country, "cool-event"))
+      delay <- AnotherServiceClass.calculateDelay()
+      result <- CalculationClass.complexCalc(delay)
       _ <- analyticsPipelineApi.logEvent(event)
     } yield {
-      CoolStuffResponse("Hello " + profile.name)
+      CoolStuffResponse("Hello " + profile.name + " " + result)
     }
   }
 }
