@@ -34,6 +34,7 @@ trait InstrumentationSupport extends StrictLogging {
     cachedEnv.get("KUBERNETES_NODE").foreach { node =>
       builder.withSpanTag("kubernetes.node", node)
     }
+    builder
   }
 
   def traceFuture[T](name: String)(f: => Future[T]): Future[T] = {
