@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kate-analytics-pipeline-service
+spec:
+  ports:
+  - name: kate-analytics-pipeline-service-80
+    port: 80
+    targetPort: 9090
+    protocol: TCP
+  selector:
+    app: kate-analytics-pipeline
+  type: ClusterIP

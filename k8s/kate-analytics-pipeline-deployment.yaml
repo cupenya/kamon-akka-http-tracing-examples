@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: kate-cool-stuff-deployment
+  name: kate-analytics-pipeline-deployment
   labels:
     gitRev: "b5b13fa"
 spec:
@@ -13,15 +13,15 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      name: kate-cool-stuff
+      name: kate-analytics-pipeline
       labels:
-        app: kate-cool-stuff
+        app: kate-analytics-pipeline
     spec:
       imagePullSecrets:
         - name: cpy-docker-test-registry
       containers:
-      - name: kate-cool-stuff
-        image: elmarweber/kamon-akka-example-cool-stuff:1.0.0-b5efbaa
+      - name: kate-analytics-pipeline
+        image: elmarweber/kamon-akka-example-analytics-pipeline:1.0.0-b5efbaa
         imagePullPolicy: Always
         ports:
         - containerPort: 9090
@@ -30,7 +30,5 @@ spec:
           "-Djava.security.egd=file:/dev/./urandom",
           "-Xmx1g",
           "-Dservice.http.port=9090",
-          "-Dservice.profile.endpoint=http://kate-profile-service",
-          "-Dservice.analytics-pipeline.endpoint=http://kate-analytics-pipeline-service",
           "-Dkamon.jaeger.host=jaeger-agent.jaeger.svc.cluster.local",
         ]
