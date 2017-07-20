@@ -7,52 +7,56 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives
 import kamon.Kamon
 import kamon.util.CallingThreadExecutionContext
+import org.elmarweber.github.kate.lib.api.AuthApi
 import org.elmarweber.github.kate.lib.httpclient.HttpClient
 import org.elmarweber.github.kate.lib.kamon.RouteLoggingDirective
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
-trait ServiceRoute extends Directives with RouteLoggingDirective {
+trait ServiceRoute extends Directives with RouteLoggingDirective with AuthorizationDirectives {
   implicit def ec: ExecutionContext
 
   implicit def api: EchoSubServiceApi
+  def authApi: AuthApi
 
   val serviceRoute = pathPrefix("api") {
-    trace {
-      pathPrefix("echo") {
-        pathEndOrSingleSlash {
-          get {
-            parameter("msg".as[String].?) { msg =>
-              complete {
-                EchoResponse(msg.getOrElse("OK"))
+    authorized { auth =>
+      trace {
+        pathPrefix("echo") {
+          pathEndOrSingleSlash {
+            get {
+              parameter("msg".as[String].?) { msg =>
+                complete {
+                  EchoResponse(msg.getOrElse("OK"))
+                }
+              }
+            }
+          }
+        } ~
+        pathPrefix("echo-via-sub") {
+          pathEndOrSingleSlash {
+            get {
+              parameter("msg".as[String].?) { msg =>
+                complete {
+                  EchoService.doEchoSub(msg)
+                }
+              }
+            }
+          }
+        } ~
+        pathPrefix("echo-sub") {
+          pathEndOrSingleSlash {
+            get {
+              parameter("msg".as[String].?) { msg =>
+                complete {
+                  EchoResponse("sub: " + msg.getOrElse("OK"))
+                }
               }
             }
           }
         }
-      } ~
-          pathPrefix("echo-via-sub") {
-            pathEndOrSingleSlash {
-              get {
-                parameter("msg".as[String].?) { msg =>
-                  complete {
-                    EchoService.doEchoSub(msg)
-                  }
-                }
-              }
-            }
-          } ~
-          pathPrefix("echo-sub") {
-            pathEndOrSingleSlash {
-              get {
-                parameter("msg".as[String].?) { msg =>
-                  complete {
-                    EchoResponse("sub: " + msg.getOrElse("OK"))
-                  }
-                }
-              }
-            }
-          }
+      }
     }
   }
 }

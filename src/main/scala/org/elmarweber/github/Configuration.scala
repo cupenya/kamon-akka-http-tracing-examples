@@ -19,6 +19,12 @@ object Configuration {
 
       val endpoint = Uri(config.getString("endpoint"))
     }
+
+    object auth {
+      private val config = rootConfig.getConfig("service.auth")
+
+      val endpoint = Uri(config.getString("endpoint"))
+    }
   }
 
 }

@@ -9,6 +9,8 @@ import kamon.util.CallingThreadExecutionContext
 import org.apache.commons.codec.digest.DigestUtils
 import org.elmarweber.github.kate.lib.api.{AuthRequest, AuthResponse}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import com.typesafe.scalalogging.StrictLogging
+import kamon.trace.Span
 import org.elmarweber.github.kate.lib.kamon.{InstrumentationSupport, RouteLoggingDirective}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,7 +21,7 @@ trait ServiceRoute extends Directives with RouteLoggingDirective {
 
   val serviceRoute = pathPrefix("api") {
     trace {
-      pathPrefix("checkAuth") {
+      pathPrefix("auth") {
         pathEndOrSingleSlash {
           post {
             entity(as[AuthRequest]) { authRequest =>
@@ -36,12 +38,20 @@ trait ServiceRoute extends Directives with RouteLoggingDirective {
   }
 }
 
-trait AuthService extends InstrumentationSupport {
+trait AuthService extends InstrumentationSupport with StrictLogging {
   def doAuth(apiKey: String)(implicit ec: ExecutionContext): Future[String] = traceFuture("doAuth") {
     Future {
-      Thread.sleep(50)
       Kamon.tracer.activeSpan().addSpanTag("apiKey", apiKey)
-      DigestUtils.sha256Hex(apiKey + "secret")
+      if (apiKey == "") {
+        Kamon.tracer.activeSpan().annotate("error", Map("message" -> "Empty API Key provided"))
+        logger.error(s"Empty API Key provided")
+        throw new Error("Empty API Key provided")
+      } else {
+        Thread.sleep(50)
+        logger.info(s"Successfully authenticated ${apiKey}")
+        DigestUtils.sha256Hex(apiKey + "secret")
+      }
+
     }
   }
 }
