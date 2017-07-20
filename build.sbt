@@ -26,12 +26,12 @@ lazy val coolStuff = (project in file("./kamon-akka-example-cool-stuff"))
   .enablePlugins(JavaServerAppPackaging, DockerPlugin, JavaAgent)
 
 lazy val root = (project in file("."))
-  //.dependsOn(lib)
+  .dependsOn(lib)
   .aggregate(auth, profile, gateway, coolStuff)
   .settings(Seq(name := "kamon-akka-http-tracing-examples-root"))
-//  .settings(serviceSettings)
-//  .settings(commonSettings)
-//  .enablePlugins(JavaServerAppPackaging, DockerPlugin, JavaAgent)
+  .settings(serviceSettings)
+  .settings(commonSettings)
+  .enablePlugins(JavaServerAppPackaging, DockerPlugin, JavaAgent)
 
 val shortCommit = ("git rev-parse --short HEAD" !!).replaceAll("\\n", "").replaceAll("\\r", "")
 
